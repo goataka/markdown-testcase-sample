@@ -1,0 +1,102 @@
+# Pull Request #10: 打刻機能の実装
+
+## 概要
+
+Issue #1 で定義された打刻機能を実装。出退勤時刻の記録、打刻修正機能を追加。
+
+## 変更点
+
+### 1. データベーススキーマの追加
+
+**ファイル**: `db/migrations/001_add_attendance_table.sql`
+
+- `attendance` テーブルの追加
+  - `id`: 主キー
+  - `employee_id`: 従業員ID（外部キー）
+  - `clock_in_time`: 出勤時刻
+  - `clock_out_time`: 退勤時刻
+  - `location`: GPS情報（JSON形式）
+  - `status`: ステータス（normal, pending_approval, approved）
+  - `created_at`, `updated_at`: タイムスタンプ
+
+- `attendance_corrections` テーブルの追加
+  - 打刻修正履歴を記録
+
+### 2. APIエンドポイントの追加
+
+**ファイル**: `src/api/attendance.js`
+
+- `POST /api/attendance/clock-in`: 出勤打刻
+  - リクエスト: `{ employee_id, location }`
+  - レスポンス: 打刻記録
+  
+- `POST /api/attendance/clock-out`: 退勤打刻
+  - リクエスト: `{ employee_id, location }`
+  - レスポンス: 打刻記録と労働時間
+
+- `POST /api/attendance/correction`: 打刻修正申請
+  - リクエスト: `{ attendance_id, corrected_time, reason }`
+  - レスポンス: 修正申請記録
+
+- `GET /api/attendance/history`: 打刻履歴取得
+  - クエリパラメータ: `employee_id, start_date, end_date`
+
+### 3. フロントエンド画面の追加
+
+**ファイル**: `src/components/ClockInOut.vue`
+
+- 打刻ボタンコンポーネント
+  - 出勤・退勤ボタン
+  - 現在時刻の表示
+  - 打刻状態の表示（出勤済み、退勤済み）
+
+**ファイル**: `src/components/AttendanceHistory.vue`
+
+- 打刻履歴表示コンポーネント
+  - 日別の出退勤時刻一覧
+  - 労働時間の表示
+  - 修正申請ボタン
+
+### 4. バリデーション追加
+
+**ファイル**: `src/validators/attendance.js`
+
+- 出勤打刻時のバリデーション
+  - 同日の出勤打刻の重複チェック
+  - 前日の退勤打刻有無チェック
+
+- 退勤打刻時のバリデーション
+  - 出勤打刻の存在チェック
+  - 出勤時刻より後の時刻チェック
+
+### 5. 通知機能の追加
+
+**ファイル**: `src/services/notification.js`
+
+- 打刻完了通知
+- 打刻忘れアラート（18時時点で退勤打刻なし）
+- 修正申請の通知（上長へ）
+
+## テスト対象
+
+この変更により、以下をテストする必要がある：
+
+1. **基本動作**: 出退勤打刻の正常動作
+2. **データ整合性**: データベースへの正確な記録
+3. **バリデーション**: 不正な打刻の防止
+4. **修正機能**: 打刻修正申請と承認フロー
+5. **通知機能**: 各種通知の正確な配信
+6. **エッジケース**: 日跨ぎ、複数回打刻、GPS取得失敗など
+
+## 影響範囲
+
+- **新規追加**: 打刻機能（既存機能への影響なし）
+- **関連機能**: 給与計算システム（今後連携予定）
+- **データ**: 新規テーブル追加（既存データへの影響なし）
+
+## デプロイ手順
+
+1. データベースマイグレーション実行
+2. APIサーバーのデプロイ
+3. フロントエンドのビルド・デプロイ
+4. 動作確認
