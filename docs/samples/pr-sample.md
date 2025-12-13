@@ -2,7 +2,7 @@
 
 ## 概要
 
-Issue #1 で定義された打刻機能を実装。出退勤時刻の記録、打刻修正機能を追加。
+Issue #1 で定義された打刻機能を実装。出退勤時刻の記録機能を追加。
 
 ## 変更点
 
@@ -15,28 +15,20 @@ Issue #1 で定義された打刻機能を実装。出退勤時刻の記録、�
   - `employee_id`: 従業員ID（外部キー）
   - `clock_in_time`: 出勤時刻
   - `clock_out_time`: 退勤時刻
-  - `location`: GPS情報（JSON形式）
-  - `status`: ステータス（normal, pending_approval, approved）
+  - `status`: ステータス（normal）
   - `created_at`, `updated_at`: タイムスタンプ
-
-- `attendance_corrections` テーブルの追加
-  - 打刻修正履歴を記録
 
 ### 2. APIエンドポイントの追加
 
 **ファイル**: `src/api/attendance.js`
 
 - `POST /api/attendance/clock-in`: 出勤打刻
-  - リクエスト: `{ employee_id, location }`
+  - リクエスト: `{ employee_id }`
   - レスポンス: 打刻記録
   
 - `POST /api/attendance/clock-out`: 退勤打刻
-  - リクエスト: `{ employee_id, location }`
+  - リクエスト: `{ employee_id }`
   - レスポンス: 打刻記録と労働時間
-
-- `POST /api/attendance/correction`: 打刻修正申請
-  - リクエスト: `{ attendance_id, corrected_time, reason }`
-  - レスポンス: 修正申請記録
 
 - `GET /api/attendance/history`: 打刻履歴取得
   - クエリパラメータ: `employee_id, start_date, end_date`
@@ -55,7 +47,6 @@ Issue #1 で定義された打刻機能を実装。出退勤時刻の記録、�
 - 打刻履歴表示コンポーネント
   - 日別の出退勤時刻一覧
   - 労働時間の表示
-  - 修正申請ボタン
 
 ### 4. バリデーション追加
 
@@ -75,7 +66,6 @@ Issue #1 で定義された打刻機能を実装。出退勤時刻の記録、�
 
 - 打刻完了通知
 - 打刻忘れアラート（18時時点で退勤打刻なし）
-- 修正申請の通知（上長へ）
 
 ## テスト対象
 
@@ -84,9 +74,8 @@ Issue #1 で定義された打刻機能を実装。出退勤時刻の記録、�
 1. **基本動作**: 出退勤打刻の正常動作
 2. **データ整合性**: データベースへの正確な記録
 3. **バリデーション**: 不正な打刻の防止
-4. **修正機能**: 打刻修正申請と承認フロー
-5. **通知機能**: 各種通知の正確な配信
-6. **エッジケース**: 日跨ぎ、複数回打刻、GPS取得失敗など
+4. **通知機能**: 各種通知の正確な配信
+5. **エッジケース**: 日跨ぎ、複数回打刻など
 
 ## 影響範囲
 
